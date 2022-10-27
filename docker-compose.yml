@@ -1,0 +1,67 @@
+version: '3.9'
+
+networks:
+  docker-app:
+
+services:
+
+  nginx:
+    container_name: NGINX
+    image: nginx:stable
+    build: 
+      context: .
+      dockerfile: docker/nginx.dockerfile
+    ports:
+      - 8098:80
+    volumes:
+      - ./app:/var/www/html
+    links:
+      - fpm
+    networks:
+      - docker-app
+  
+  fpm:
+    container_name: PHP-LARAVEL
+    build: 
+      context: .
+      dockerfile: docker/fpm.dockerfile
+    volumes:
+      - ./app:/var/www/html
+    links:
+      - db
+    networks:
+      - docker-app
+
+  db:
+    container_name: MYSQL
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=docker-app
+    networks:
+      - docker-app
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: PhpMyAdmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+    depends_on:
+      - db
+    networks:
+      - docker-app
+  
+  reactjs:
+    build: 
+      context: .
+      dockerfile: docker/reactjs.dockerfile
+    container_name: ReactJS
+    ports:
+      - '3000:3000'
+    stdin_open: true
